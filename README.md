@@ -135,20 +135,5 @@ tests/                 pytest suite
 docs/                  architecture, reasoning answers, decision log, evaluation, demo transcripts
 ```
 
-## Documentation
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): workflow, state management, routing, LLM vs deterministic split
-- [docs/REASONING.md](docs/REASONING.md): answers to the eight reasoning challenges
-- [docs/DECISIONS.md](docs/DECISIONS.md): technical decision log (alternatives and trade-offs)
-- [docs/EVALUATION.md](docs/EVALUATION.md): evaluation method, results, limitations, improvements
-- [docs/DEMO_SCENARIOS.md](docs/DEMO_SCENARIOS.md): five multi-step scenarios with full decision traces
-
-## Demo video outline (≈5 min)
-
-1. Start the server and show the UI and the trace panel (30 s).
-2. **S1:** plan → "quiz me on week 1" → wrong answers → automatic re-explanation → retry (90 s).
-3. **S2:** "Help me study" → clarification → plan. Point out it never re-asks for known facts (45 s).
-4. **S3:** press *Quiz: 1× invalid output*, then ask for a quiz. The trace shows the repair-retry. Press *Explain: timeouts*, then ask for an explanation. You get a graceful message and the next turn works (60 s).
-5. **S5:** "Check my answers" with no quiz → policy override in the trace (30 s).
-6. Show `pytest` and the eval report (30 s).
 
