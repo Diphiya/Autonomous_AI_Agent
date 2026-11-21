@@ -1,6 +1,5 @@
 # 📚 AI Study Assistant — an agentic workflow with LangGraph
 
-*Generative AI Intern Assessment, Problem Statement 3: Autonomous AI Assistant Using Agentic Workflows*
 
 A study assistant that understands a student's goals, then **decides for itself** which step comes next: build a personalised study plan, explain a concept at the right level, generate a quiz, grade the answers, or ask a clarifying question. It keeps context across turns, changes its plan based on intermediate results (for example, a low quiz score triggers a focused re-explanation), and recovers from failed tool calls and invalid LLM output.
 
