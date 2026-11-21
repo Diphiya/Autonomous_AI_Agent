@@ -1,0 +1,41 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	ingest(ingest)
+	router(router)
+	create_study_plan(create_study_plan)
+	explain_topic(explain_topic)
+	generate_quiz(generate_quiz)
+	evaluate_answers(evaluate_answers)
+	recover(recover)
+	ask_clarification(ask_clarification)
+	respond(respond)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> ingest;
+	create_study_plan -.-> recover;
+	create_study_plan -.-> router;
+	evaluate_answers -.-> recover;
+	evaluate_answers -.-> router;
+	explain_topic -.-> recover;
+	explain_topic -.-> router;
+	generate_quiz -.-> recover;
+	generate_quiz -.-> router;
+	ingest -.-> evaluate_answers;
+	ingest -.-> router;
+	recover -.-> generate_quiz;
+	recover -.-> router;
+	router -.-> ask_clarification;
+	router -.-> create_study_plan;
+	router -.-> evaluate_answers;
+	router -.-> explain_topic;
+	router -.-> generate_quiz;
+	router -.-> respond;
+	ask_clarification --> __end__;
+	respond --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

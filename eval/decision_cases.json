@@ -1,0 +1,30 @@
+[
+  {"id": "D01", "category": "clear-intent", "setup": [], "message": "Explain gradient descent", "expect_first": ["explain_topic"], "expect_tools": ["explain_topic"]},
+  {"id": "D02", "category": "clear-intent", "setup": [], "message": "Give me 3 practice questions on overfitting", "expect_first": ["generate_quiz"], "expect_tools": ["generate_quiz"]},
+  {"id": "D03", "category": "clear-intent", "setup": [], "message": "Create a 4-week study plan for machine learning, 6 hours per week, I'm a beginner", "expect_first": ["create_study_plan"], "expect_tools": ["create_study_plan"]},
+  {"id": "D04", "category": "clear-intent", "setup": [], "message": "What is recursion?", "expect_first": ["explain_topic"], "expect_tools": ["explain_topic"]},
+  {"id": "D05", "category": "small-talk", "setup": [], "message": "hi there", "expect_first": ["respond", "ask_clarification"], "expect_tools": []},
+  {"id": "D06", "category": "small-talk", "setup": ["Explain recursion"], "message": "thanks!", "expect_first": ["respond"], "expect_tools": []},
+
+  {"id": "D07", "category": "ambiguous", "setup": [], "message": "Help me study", "expect_first": ["ask_clarification"], "expect_tools": []},
+  {"id": "D08", "category": "ambiguous", "setup": [], "message": "Make me a study plan", "expect_first": ["ask_clarification"], "expect_tools": []},
+  {"id": "D09", "category": "ambiguous", "setup": [], "message": "Quiz me", "expect_first": ["ask_clarification"], "expect_tools": []},
+  {"id": "D10", "category": "ambiguous", "setup": [], "message": "I want a plan for machine learning", "expect_first": ["ask_clarification"], "expect_tools": []},
+
+  {"id": "D11", "category": "context-resolution", "setup": ["Explain overfitting"], "message": "Quiz me on it", "expect_first": ["generate_quiz"], "expect_tools": ["generate_quiz"], "expect_arg": {"topic~": "overfitting"}},
+  {"id": "D12", "category": "context-resolution", "setup": ["Create a 4-week study plan for machine learning, 6 hours per week, beginner"], "message": "Quiz me on week 2", "expect_first": ["generate_quiz"], "expect_tools": ["generate_quiz"], "expect_arg": {"topic~": "overfitting"}},
+  {"id": "D13", "category": "context-resolution", "setup": ["Help me study", "machine learning"], "message": "a study plan please, 3 weeks and 4 hours per week", "expect_first": ["create_study_plan"], "expect_tools": ["create_study_plan"]},
+  {"id": "D14", "category": "context-resolution", "setup": ["I want a plan for machine learning"], "message": "4 weeks, 5 hours per week", "expect_first": ["create_study_plan"], "expect_tools": ["create_study_plan"]},
+
+  {"id": "D15", "category": "multi-step", "setup": [], "message": "Explain gradient descent and then give me 3 practice questions", "expect_first": ["explain_topic"], "expect_tools": ["explain_topic", "generate_quiz"]},
+  {"id": "D16", "category": "multi-step", "setup": ["Quiz me on overfitting"], "message": "1. A 2. A 3. A 4. no idea", "expect_first": ["evaluate_answers"], "expect_tools": ["evaluate_answers", "explain_topic"]},
+  {"id": "D17", "category": "multi-step", "setup": ["Quiz me on overfitting"], "message": "1. B 2. C 3. B 4. Regularisation adds a penalty on complexity so the model fits less noise and generalises better", "expect_first": ["evaluate_answers"], "expect_tools": ["evaluate_answers"]},
+
+  {"id": "D18", "category": "invalid-request", "setup": [], "message": "Check my answers: 1. A 2. B", "expect_first": ["respond", "ask_clarification"], "expect_tools": []},
+  {"id": "D19", "category": "invalid-request", "setup": ["Create a 2-week study plan for algorithms, 4 hours per week"], "message": "Quiz me on week 6", "expect_first": ["ask_clarification"], "expect_tools": []},
+  {"id": "D20", "category": "invalid-request", "setup": [], "message": "Quiz me on week 1", "expect_first": ["ask_clarification"], "expect_tools": []},
+
+  {"id": "D21", "category": "failure", "setup": [], "faults": {"generate_quiz": ["invalid_output"]}, "message": "Quiz me on recursion", "expect_first": ["generate_quiz"], "expect_tools": ["generate_quiz"]},
+  {"id": "D22", "category": "failure", "setup": [], "faults": {"explain_topic": ["timeout", "timeout", "timeout"]}, "message": "Explain overfitting", "expect_first": ["explain_topic"], "expect_tools": [], "expect_reply~": "couldn't"},
+  {"id": "D23", "category": "failure", "setup": [], "faults": {"route": ["error"]}, "message": "Explain recursion", "expect_first": ["explain_topic"], "expect_tools": ["explain_topic"]}
+]

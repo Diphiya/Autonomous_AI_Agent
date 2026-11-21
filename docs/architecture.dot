@@ -1,0 +1,61 @@
+digraph StudyAgent {
+  graph [rankdir=LR, compound=true, fontname="Helvetica", fontsize=12, nodesep=0.35, ranksep=0.55, pad=0.3, bgcolor="white",
+         label="AI Study Assistant — agent workflow, tools and state", labelloc=t, fontsize=18];
+  node  [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#ffffff", color="#8a8a8a"];
+  edge  [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  subgraph cluster_client {
+    label="Clients"; style="rounded,dashed"; color="#bbbbbb";
+    ui  [label="Web chat UI\n(+ decision-trace panel,\nfault-injection buttons)"];
+    cli [label="CLI"];
+  }
+
+  api [label="FastAPI\nPOST /api/chat\nGET /api/sessions/{id}\nPOST /api/sessions/{id}/faults\nGET /api/graph", fillcolor="#eef3f1"];
+  svc [label="StudyAssistant service\nvalidation · timing · answer-key\nstripping · recursion backstop", fillcolor="#eef3f1"];
+
+  subgraph cluster_graph {
+    label="LangGraph StateGraph (one invocation per user message)"; style="rounded"; color="#2f5d50"; fontcolor="#2f5d50";
+    ingest  [label="ingest\nreset turn scratch\nparse quiz answers\n(deterministic)", fillcolor="#e7efec"];
+    router  [label="router\nLLM proposes RouterDecision\n(structured output)", fillcolor="#fff4d6"];
+    policy  [label="policy guards (deterministic)\nstep/tool limits · duplicate & failed-call block\npreconditions · 'week N'/'it' resolution\nclarification budget · defaults", fillcolor="#fde7dc", color="#a8552b"];
+    subgraph cluster_tools {
+      label="Tools (typed in/out, Pydantic-validated)"; style="rounded,filled"; fillcolor="#f7f7f4"; color="#cccccc";
+      plan  [label="create_study_plan\n(LLM)"];
+      expl  [label="explain_topic\n(LLM)"];
+      quiz  [label="generate_quiz\n(LLM)"];
+      evalt [label="evaluate_answers\nMCQ: deterministic\nshort answer: LLM"];
+    }
+    recover [label="recover\ndegraded retry (quiz)\nor graceful failure note", fillcolor="#fde7dc", color="#a8552b"];
+    clarify [label="ask_clarification\n→ END", fillcolor="#e7efec"];
+    respond [label="respond\ndeterministic Markdown\nrendering → END", fillcolor="#e7efec"];
+  }
+
+  subgraph cluster_llm {
+    label="LLM layer"; style="rounded"; color="#bbbbbb";
+    sc  [label="structured_call()\nschema validation · repair-retry\nbackoff on transient errors\nfault injection hook", fillcolor="#fff4d6"];
+    prov [label="LangChain init_chat_model\nOpenAI · Anthropic · Groq · Ollama …\nor offline MockLLM"];
+  }
+
+  subgraph cluster_state {
+    label="State (checkpointer, keyed by session_id)"; style="rounded"; color="#bbbbbb";
+    st [label="Session state (persisted)\nmessages · profile · study_plan\nactive_quiz (with answer key)\nquiz_history · weak_concepts\nlast_topic · pending_action\nconsecutive_clarifications", shape=note, fillcolor="#f4f1ff"];
+    tt [label="Turn state (reset each message)\nsteps · tool_calls log · decision\noutputs · notes · trace", shape=note, fillcolor="#f4f1ff"];
+    ck [label="MemorySaver (default)\nor SQLite (CHECKPOINT_DB)", shape=cylinder, fillcolor="#f4f1ff"];
+  }
+
+  ui -> api; cli -> svc; api -> svc; svc -> ingest [label="invoke(thread_id)"];
+  ingest -> router [label="otherwise"];
+  ingest -> evalt [label="fast path: message is a\ncomplete answer set", color="#2f5d50", fontcolor="#2f5d50"];
+  router -> policy [label="proposed action"];
+  policy -> plan; policy -> expl; policy -> quiz; policy -> evalt;
+  policy -> clarify [label="ambiguous /\nprecondition failed"];
+  policy -> respond [label="done / limit /\nblocked"];
+  plan -> router [ltail=cluster_tools, label="ok → decide next step", style=dashed];
+  expl -> recover [ltail=cluster_tools, label="any tool failed", color="#a8552b", fontcolor="#a8552b"];
+  recover -> quiz [label="1× simpler retry", color="#a8552b", fontcolor="#a8552b"];
+  recover -> router [style=dashed];
+  quiz -> sc [ltail=cluster_tools, style=dotted, label="every LLM call\n(router + tools)"];
+  sc -> prov;
+  st -> ck [arrowhead=none, style=dotted]; tt -> ck [arrowhead=none, style=dotted];
+  svc -> st [style=invis];
+}

@@ -1,0 +1,598 @@
+{
+  "metrics": {
+    "model": "mock",
+    "cases": 23,
+    "repeats": 2,
+    "system_first_action_accuracy": 1.0,
+    "raw_llm_first_action_accuracy": 0.8695652173913043,
+    "tool_sequence_exact_match": 1.0,
+    "clarification_precision": 1.0,
+    "clarification_recall": 1.0,
+    "policy_override_rate_per_turn": 0.13043478260869565,
+    "avg_tool_calls_per_turn": 0.6956521739130435,
+    "median_latency_s": 0.007,
+    "consistency_across_repeats": 1.0
+  },
+  "rows": [
+    {
+      "id": "D01",
+      "category": "clear-intent",
+      "message": "Explain gradient descent",
+      "expected_first": [
+        "explain_topic"
+      ],
+      "executed_first": "explain_topic",
+      "llm_proposed_first": "explain_topic",
+      "first_source": "llm",
+      "expected_tools": [
+        "explain_topic"
+      ],
+      "tools": [
+        "explain_topic"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.019,
+      "action_sequence": [
+        "explain_topic",
+        "respond"
+      ]
+    },
+    {
+      "id": "D02",
+      "category": "clear-intent",
+      "message": "Give me 3 practice questions on overfitting",
+      "expected_first": [
+        "generate_quiz"
+      ],
+      "executed_first": "generate_quiz",
+      "llm_proposed_first": "generate_quiz",
+      "first_source": "llm",
+      "expected_tools": [
+        "generate_quiz"
+      ],
+      "tools": [
+        "generate_quiz"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.009,
+      "action_sequence": [
+        "generate_quiz",
+        "respond"
+      ]
+    },
+    {
+      "id": "D03",
+      "category": "clear-intent",
+      "message": "Create a 4-week study plan for machine learning, 6 hours per week, I'm a beginner",
+      "expected_first": [
+        "create_study_plan"
+      ],
+      "executed_first": "create_study_plan",
+      "llm_proposed_first": "create_study_plan",
+      "first_source": "llm",
+      "expected_tools": [
+        "create_study_plan"
+      ],
+      "tools": [
+        "create_study_plan"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.006,
+      "action_sequence": [
+        "create_study_plan",
+        "respond"
+      ]
+    },
+    {
+      "id": "D04",
+      "category": "clear-intent",
+      "message": "What is recursion?",
+      "expected_first": [
+        "explain_topic"
+      ],
+      "executed_first": "explain_topic",
+      "llm_proposed_first": "explain_topic",
+      "first_source": "llm",
+      "expected_tools": [
+        "explain_topic"
+      ],
+      "tools": [
+        "explain_topic"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.007,
+      "action_sequence": [
+        "explain_topic",
+        "respond"
+      ]
+    },
+    {
+      "id": "D05",
+      "category": "small-talk",
+      "message": "hi there",
+      "expected_first": [
+        "respond",
+        "ask_clarification"
+      ],
+      "executed_first": "respond",
+      "llm_proposed_first": "respond",
+      "first_source": "llm",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 0,
+      "latency_s": 0.007,
+      "action_sequence": [
+        "respond"
+      ]
+    },
+    {
+      "id": "D06",
+      "category": "small-talk",
+      "message": "thanks!",
+      "expected_first": [
+        "respond"
+      ],
+      "executed_first": "respond",
+      "llm_proposed_first": "respond",
+      "first_source": "llm",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 0,
+      "latency_s": 0.006,
+      "action_sequence": [
+        "respond"
+      ]
+    },
+    {
+      "id": "D07",
+      "category": "ambiguous",
+      "message": "Help me study",
+      "expected_first": [
+        "ask_clarification"
+      ],
+      "executed_first": "ask_clarification",
+      "llm_proposed_first": "ask_clarification",
+      "first_source": "llm",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 0,
+      "latency_s": 0.005,
+      "action_sequence": [
+        "ask_clarification"
+      ]
+    },
+    {
+      "id": "D08",
+      "category": "ambiguous",
+      "message": "Make me a study plan",
+      "expected_first": [
+        "ask_clarification"
+      ],
+      "executed_first": "ask_clarification",
+      "llm_proposed_first": "ask_clarification",
+      "first_source": "llm",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 0,
+      "latency_s": 0.005,
+      "action_sequence": [
+        "ask_clarification"
+      ]
+    },
+    {
+      "id": "D09",
+      "category": "ambiguous",
+      "message": "Quiz me",
+      "expected_first": [
+        "ask_clarification"
+      ],
+      "executed_first": "ask_clarification",
+      "llm_proposed_first": "ask_clarification",
+      "first_source": "llm",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 0,
+      "latency_s": 0.006,
+      "action_sequence": [
+        "ask_clarification"
+      ]
+    },
+    {
+      "id": "D10",
+      "category": "ambiguous",
+      "message": "I want a plan for machine learning",
+      "expected_first": [
+        "ask_clarification"
+      ],
+      "executed_first": "ask_clarification",
+      "llm_proposed_first": "ask_clarification",
+      "first_source": "llm",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 0,
+      "latency_s": 0.006,
+      "action_sequence": [
+        "ask_clarification"
+      ]
+    },
+    {
+      "id": "D11",
+      "category": "context-resolution",
+      "message": "Quiz me on it",
+      "expected_first": [
+        "generate_quiz"
+      ],
+      "executed_first": "generate_quiz",
+      "llm_proposed_first": "generate_quiz",
+      "first_source": "llm",
+      "expected_tools": [
+        "generate_quiz"
+      ],
+      "tools": [
+        "generate_quiz"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.009,
+      "action_sequence": [
+        "generate_quiz",
+        "respond"
+      ]
+    },
+    {
+      "id": "D12",
+      "category": "context-resolution",
+      "message": "Quiz me on week 2",
+      "expected_first": [
+        "generate_quiz"
+      ],
+      "executed_first": "generate_quiz",
+      "llm_proposed_first": "generate_quiz",
+      "first_source": "llm",
+      "expected_tools": [
+        "generate_quiz"
+      ],
+      "tools": [
+        "generate_quiz"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.01,
+      "action_sequence": [
+        "generate_quiz",
+        "respond"
+      ]
+    },
+    {
+      "id": "D13",
+      "category": "context-resolution",
+      "message": "a study plan please, 3 weeks and 4 hours per week",
+      "expected_first": [
+        "create_study_plan"
+      ],
+      "executed_first": "create_study_plan",
+      "llm_proposed_first": "create_study_plan",
+      "first_source": "llm",
+      "expected_tools": [
+        "create_study_plan"
+      ],
+      "tools": [
+        "create_study_plan"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.007,
+      "action_sequence": [
+        "create_study_plan",
+        "respond"
+      ]
+    },
+    {
+      "id": "D14",
+      "category": "context-resolution",
+      "message": "4 weeks, 5 hours per week",
+      "expected_first": [
+        "create_study_plan"
+      ],
+      "executed_first": "create_study_plan",
+      "llm_proposed_first": "create_study_plan",
+      "first_source": "llm",
+      "expected_tools": [
+        "create_study_plan"
+      ],
+      "tools": [
+        "create_study_plan"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.01,
+      "action_sequence": [
+        "create_study_plan",
+        "respond"
+      ]
+    },
+    {
+      "id": "D15",
+      "category": "multi-step",
+      "message": "Explain gradient descent and then give me 3 practice questions",
+      "expected_first": [
+        "explain_topic"
+      ],
+      "executed_first": "explain_topic",
+      "llm_proposed_first": "explain_topic",
+      "first_source": "llm",
+      "expected_tools": [
+        "explain_topic",
+        "generate_quiz"
+      ],
+      "tools": [
+        "explain_topic",
+        "generate_quiz"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 2,
+      "latency_s": 0.02,
+      "action_sequence": [
+        "explain_topic",
+        "generate_quiz",
+        "respond"
+      ]
+    },
+    {
+      "id": "D16",
+      "category": "multi-step",
+      "message": "1. A 2. A 3. A 4. no idea",
+      "expected_first": [
+        "evaluate_answers"
+      ],
+      "executed_first": "evaluate_answers",
+      "llm_proposed_first": "evaluate_answers",
+      "first_source": "deterministic",
+      "expected_tools": [
+        "evaluate_answers",
+        "explain_topic"
+      ],
+      "tools": [
+        "evaluate_answers",
+        "explain_topic"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 2,
+      "latency_s": 0.019,
+      "action_sequence": [
+        "evaluate_answers",
+        "explain_topic",
+        "respond"
+      ]
+    },
+    {
+      "id": "D17",
+      "category": "multi-step",
+      "message": "1. B 2. C 3. B 4. Regularisation adds a penalty on complexity so the model fits less noise and generalises better",
+      "expected_first": [
+        "evaluate_answers"
+      ],
+      "executed_first": "evaluate_answers",
+      "llm_proposed_first": "evaluate_answers",
+      "first_source": "deterministic",
+      "expected_tools": [
+        "evaluate_answers"
+      ],
+      "tools": [
+        "evaluate_answers"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.008,
+      "action_sequence": [
+        "evaluate_answers",
+        "respond"
+      ]
+    },
+    {
+      "id": "D18",
+      "category": "invalid-request",
+      "message": "Check my answers: 1. A 2. B",
+      "expected_first": [
+        "respond",
+        "ask_clarification"
+      ],
+      "executed_first": "respond",
+      "llm_proposed_first": "evaluate_answers",
+      "first_source": "policy-override",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": false,
+      "overrides": 1,
+      "tool_calls": 0,
+      "latency_s": 0.004,
+      "action_sequence": [
+        "respond"
+      ]
+    },
+    {
+      "id": "D19",
+      "category": "invalid-request",
+      "message": "Quiz me on week 6",
+      "expected_first": [
+        "ask_clarification"
+      ],
+      "executed_first": "ask_clarification",
+      "llm_proposed_first": "generate_quiz",
+      "first_source": "policy-override",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": false,
+      "overrides": 1,
+      "tool_calls": 0,
+      "latency_s": 0.005,
+      "action_sequence": [
+        "ask_clarification"
+      ]
+    },
+    {
+      "id": "D20",
+      "category": "invalid-request",
+      "message": "Quiz me on week 1",
+      "expected_first": [
+        "ask_clarification"
+      ],
+      "executed_first": "ask_clarification",
+      "llm_proposed_first": "generate_quiz",
+      "first_source": "policy-override",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": false,
+      "overrides": 1,
+      "tool_calls": 0,
+      "latency_s": 0.007,
+      "action_sequence": [
+        "ask_clarification"
+      ]
+    },
+    {
+      "id": "D21",
+      "category": "failure",
+      "message": "Quiz me on recursion",
+      "expected_first": [
+        "generate_quiz"
+      ],
+      "executed_first": "generate_quiz",
+      "llm_proposed_first": "generate_quiz",
+      "first_source": "llm",
+      "expected_tools": [
+        "generate_quiz"
+      ],
+      "tools": [
+        "generate_quiz"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.008,
+      "action_sequence": [
+        "generate_quiz",
+        "respond"
+      ]
+    },
+    {
+      "id": "D22",
+      "category": "failure",
+      "message": "Explain overfitting",
+      "expected_first": [
+        "explain_topic"
+      ],
+      "executed_first": "explain_topic",
+      "llm_proposed_first": "explain_topic",
+      "first_source": "llm",
+      "expected_tools": [],
+      "tools": [],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.161,
+      "action_sequence": [
+        "explain_topic",
+        "respond"
+      ]
+    },
+    {
+      "id": "D23",
+      "category": "failure",
+      "message": "Explain recursion",
+      "expected_first": [
+        "explain_topic"
+      ],
+      "executed_first": "explain_topic",
+      "llm_proposed_first": "explain_topic",
+      "first_source": "llm",
+      "expected_tools": [
+        "explain_topic"
+      ],
+      "tools": [
+        "explain_topic"
+      ],
+      "pass_first": true,
+      "pass_tools": true,
+      "raw_llm_correct": true,
+      "overrides": 0,
+      "tool_calls": 1,
+      "latency_s": 0.058,
+      "action_sequence": [
+        "explain_topic",
+        "respond"
+      ]
+    }
+  ]
+}

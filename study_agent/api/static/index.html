@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Study Assistant</title>
+<style>
+  :root { --bg:#f6f5f2; --panel:#fff; --ink:#1d1d1f; --muted:#6b6b70; --line:#e4e2dc; --accent:#2f5d50; --accent-soft:#e7efec; --warn:#a8552b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { font-size:17px; margin:0; } header .meta { color:var(--muted); font-size:13px; margin-left:auto; }
+  main { display:grid; grid-template-columns: minmax(0,1fr) 380px; height: calc(100vh - 53px); }
+  #chat { display:flex; flex-direction:column; min-height:0; }
+  #log { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px; }
+  .msg { max-width: 760px; padding:12px 14px; border-radius:10px; white-space:normal; }
+  .user { align-self:flex-end; background:var(--accent); color:#fff; }
+  .bot { align-self:flex-start; background:var(--panel); border:1px solid var(--line); }
+  .bot h3 { margin:6px 0; font-size:15px; } .bot p { margin:6px 0; } .bot ul { margin:4px 0 4px 18px; padding:0; }
+  .bot code { background:#f0efe9; padding:1px 4px; border-radius:4px; }
+  .lat { font-size:11px; color:var(--muted); margin-top:6px; }
+  form { display:flex; gap:8px; padding:14px 20px; border-top:1px solid var(--line); background:var(--panel); }
+  textarea { flex:1; resize:none; height:52px; padding:10px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:0 18px; font:inherit; cursor:pointer; }
+  button.secondary { background:var(--accent-soft); color:var(--accent); padding:6px 10px; font-size:12px; }
+  button:disabled { opacity:.5; cursor:wait; }
+  aside { border-left:1px solid var(--line); background:var(--panel); overflow-y:auto; padding:16px; }
+  aside h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:18px 0 8px; }
+  aside h2:first-child { margin-top:0; }
+  .step { border-left:3px solid var(--line); padding:4px 0 6px 10px; margin-bottom:8px; font-size:13px; }
+  .step .act { font-weight:600; } .step .src { font-size:11px; padding:1px 6px; border-radius:10px; background:var(--accent-soft); color:var(--accent); margin-left:6px; }
+  .step.override { border-color:var(--warn); } .step.override .src { background:#f6e7df; color:var(--warn); }
+  .step.tool { border-color:var(--accent); } .step.failed { border-color:#c0392b; }
+  .step .why { color:var(--muted); } .step .det { font-family:ui-monospace,monospace; font-size:11px; color:#555; word-break:break-word; }
+  pre { font-size:11px; background:#f7f6f2; padding:8px; border-radius:6px; overflow-x:auto; max-height:260px; }
+  .faults { display:flex; flex-wrap:wrap; gap:6px; }
+  .examples { display:flex; flex-wrap:wrap; gap:6px; padding:0 20px 10px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } aside { display:none; } }
+</style>
+</head>
+<body>
+<header><h1>📚 AI Study Assistant</h1><span class="meta" id="meta">connecting…</span></header>
+<main>
+  <section id="chat">
+    <div id="log"></div>
+    <div class="examples" id="examples"></div>
+    <form id="f"><textarea id="in" placeholder="e.g. Make me a 4-week machine learning plan, 6 hours a week, I'm a beginner" autofocus></textarea><button id="send">Send</button></form>
+  </section>
+  <aside>
+    <h2>Decision trace (last turn)</h2><div id="trace"><div class="step"><span class="why">Each step the agent takes, why, and who decided (LLM, deterministic code, or a policy override) appears here.</span></div></div>
+    <h2>Failure injection (demo)</h2>
+    <div class="faults">
+      <button class="secondary" data-task="generate_quiz" data-f="invalid_output">Quiz: 1× invalid output</button>
+      <button class="secondary" data-task="generate_quiz" data-f="invalid_output,invalid_output,invalid_output">Quiz: always invalid</button>
+      <button class="secondary" data-task="explain_topic" data-f="timeout,timeout,timeout">Explain: timeouts</button>
+      <button class="secondary" data-task="route" data-f="error">Router: 1× 503</button>
+    </div>
+    <div id="faultmsg" class="lat"></div>
+    <h2>Session state</h2><pre id="state">{}</pre>
+  </aside>
+</main>
+<script>
+const log = document.getElementById('log'), input = document.getElementById('in'), send = document.getElementById('send');
+let sessionId = null;
+const examples = ["Help me study", "Make me a study plan for machine learning: 4 weeks, 6 hours a week, I'm a beginner",
+  "Quiz me on week 1", "Explain overfitting and then give me 3 practice questions", "Check my answers: 1. A 2. B"];
+document.getElementById('examples').innerHTML = examples.map(e => `<button class="secondary" type="button">${e}</button>`).join('');
+document.querySelectorAll('#examples button').forEach(b => b.onclick = () => { input.value = b.textContent; input.focus(); });
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function md(text){ // tiny markdown subset: ###, **bold**, *italic*, `code`, - lists, paragraphs
+  const lines = esc(text).split('\n'); let html='', inList=false;
+  const inline = s => s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[\s(])\*(?![\s*])([^*\n]+?)\*(?=[\s).,;:!?]|$)/g,'$1<i>$2</i>').replace(/`(.+?)`/g,'<code>$1</code>');
+  for (const raw of lines){ const l = raw.trimEnd();
+    if (/^\s*- /.test(l)){ if(!inList){html+='<ul>';inList=true;} html+='<li>'+inline(l.replace(/^\s*- /,''))+'</li>'; continue; }
+    if (inList){html+='</ul>';inList=false;}
+    if (l.startsWith('### ')) html+='<h3>'+inline(l.slice(4))+'</h3>';
+    else if (l.trim()==='') html+='';
+    else html+='<p>'+inline(l.replace(/^ {3}/,'&nbsp;&nbsp;&nbsp;'))+'</p>';
+  } if(inList) html+='</ul>'; return html; }
+function add(role, text, extra){ const d=document.createElement('div'); d.className='msg '+role;
+  d.innerHTML = role==='bot' ? md(text) + (extra?`<div class="lat">${extra}</div>`:'') : esc(text);
+  log.appendChild(d); log.scrollTop = log.scrollHeight; }
+function renderTrace(trace){ const t=document.getElementById('trace');
+  t.innerHTML = trace.map(s => { const cls = s.source==='policy-override'||s.source==='recovery' ? 'override' : (s.source==='tool' ? (s.decision==='failed'?'failed':'tool') : '');
+    return `<div class="step ${cls}"><span class="act">${s.step}. ${esc(s.node)} → ${esc(s.decision)}</span><span class="src">${esc(s.source)}</span>
+    <div class="why">${esc(s.reasoning||'')}</div>${s.detail?`<div class="det">${esc(s.detail)}</div>`:''}</div>`; }).join(''); }
+async function refreshState(){ if(!sessionId) return; const r = await fetch('/api/sessions/'+sessionId); document.getElementById('state').textContent = JSON.stringify(await r.json(), null, 2); }
+
+document.getElementById('f').onsubmit = async e => { e.preventDefault(); const text=input.value.trim(); if(!text) return;
+  add('user', text); input.value=''; send.disabled=true;
+  try { const r = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text, session_id:sessionId})});
+    const j = await r.json(); if(!r.ok) throw new Error(j.detail||r.statusText);
+    sessionId = j.session_id; add('bot', j.reply, `${j.latency_ms} ms · ${j.tool_calls.length} tool call(s)`); renderTrace(j.trace);
+    document.getElementById('state').textContent = JSON.stringify(j.state, null, 2);
+  } catch(err){ add('bot', '⚠️ '+err.message); } finally { send.disabled=false; input.focus(); } };
+input.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); document.getElementById('f').requestSubmit(); } });
+document.querySelectorAll('.faults button').forEach(b => b.onclick = async () => {
+  if(!sessionId){ document.getElementById('faultmsg').textContent='Send a message first to start a session.'; return; }
+  const r = await fetch(`/api/sessions/${sessionId}/faults`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:b.dataset.task, faults:b.dataset.f.split(',')})});
+  const j = await r.json(); document.getElementById('faultmsg').textContent = r.ok ? 'Queued: '+JSON.stringify(j.pending) : j.detail; });
+fetch('/api/health').then(r=>r.json()).then(j=>document.getElementById('meta').textContent=`LLM: ${j.llm}`).catch(()=>{});
+add('bot', "Hi! I can **build a study plan**, **explain a topic**, **quiz you**, and **grade your answers**. What are you studying?");
+</script>
+</body>
+</html>

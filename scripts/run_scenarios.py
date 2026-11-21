@@ -1,0 +1,155 @@
+"""Run the multi-step demo scenarios and write transcripts + decision traces.
+
+    python scripts/run_scenarios.py                       # offline mock LLM
+    LLM_MODEL=openai:gpt-4o-mini python scripts/run_scenarios.py --out docs/DEMO_SCENARIOS_openai.md
+
+Each scenario is a list of steps: ("say", message) or ("fault", task, [kinds]).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from study_agent.agent import StudyAssistant  # noqa: E402
+from study_agent.config import get_settings  # noqa: E402
+from study_agent.llm.mock_llm import MockLLM  # noqa: E402
+from study_agent.schemas import Action, RouterDecision  # noqa: E402
+
+SCENARIOS: list[dict[str, Any]] = [
+    {
+        "id": "S1", "title": "Study plan → quiz on a plan week → grading → adaptive re-explanation → retry",
+        "why": "Core multi-step flow. Shows state carried across turns (plan, active quiz, weak concepts) and the "
+               "workflow adapting to an intermediate result (low score triggers an extra explanation step).",
+        "steps": [
+            ("say", "I want to learn machine learning for my exam. I have 4 weeks and about 6 hours a week, I'm a beginner. Make me a study plan."),
+            ("say", "Quiz me on week 1"),
+            ("say", "1. A 2. A 3. C 4. not sure"),
+            ("say", "ok, quiz me again on it"),
+            ("say", "1. B 2. B 3. B 4. Features on different scales make the loss surface elongated so steps zig-zag; scaling lets one learning rate work and steps go more direct"),
+        ],
+    },
+    {
+        "id": "S2", "title": "Ambiguous / incomplete request → clarifications → clarification budget",
+        "why": "The agent asks instead of guessing, does not re-ask for facts it already has, and stops asking after "
+               "2 consecutive questions — proceeding with stated, overridable defaults.",
+        "steps": [
+            ("say", "Help me study"),
+            ("say", "machine learning"),
+            ("say", "a plan please, I have 3 weeks"),
+            ("say", "explain the first topic"),
+        ],
+    },
+    {
+        "id": "S3", "title": "Tool errors and invalid LLM responses → retry, repair, degrade, recover",
+        "why": "Failures injected at the LLM boundary (works identically with a real model). Shows repair-retry on "
+               "invalid output, degraded fallback, graceful failure without losing state, and router retry.",
+        "steps": [
+            ("say", "Explain recursion"),
+            ("fault", "generate_quiz", ["invalid_output"]),
+            ("say", "Now give me 3 practice questions on it"),
+            ("fault", "explain_topic", ["timeout", "timeout", "timeout"]),
+            ("say", "Explain overfitting"),
+            ("fault", "generate_quiz", ["invalid_output"] * 6),
+            ("say", "Quiz me on overfitting"),
+            ("fault", "route", ["error"]),
+            ("say", "Explain overfitting"),
+        ],
+    },
+    {
+        "id": "S4", "title": "Compound request in one message → tool chaining → answers with natural phrasing",
+        "why": "One message requires two tools in sequence; the router chains them and then stops. Shows the "
+               "deterministic answer parser and fast path (no routing LLM call for pure answers).",
+        "steps": [
+            ("say", "Explain gradient descent and then give me 3 practice questions"),
+            ("say", "I think 1. B 2) b 3. c"),
+        ],
+    },
+    {
+        "id": "S5", "title": "Incorrect decisions caught by the policy layer (preconditions, references, loops)",
+        "why": "Shows deterministic guards overriding bad or impossible actions: grading with no quiz, a plan week "
+               "that doesn't exist, and a misbehaving router that keeps proposing the same tool (loop).",
+        "steps": [
+            ("say", "Check my answers: 1. A 2. B"),
+            ("say", "Make a plan for algorithms, 2 weeks, 4 hours per week"),
+            ("say", "Quiz me on week 5"),
+            ("stubborn", True),
+            ("say", "Explain binary search"),
+            ("stubborn", False),
+        ],
+    },
+]
+
+
+class StubbornLLM(MockLLM):
+    """Simulates a misbehaving router that always proposes the same tool call."""
+
+    stubborn = False
+
+    def _task_route(self, ctx):
+        if self.stubborn:
+            return RouterDecision(reasoning="(simulated faulty LLM) explain binary search — again.",
+                                  action=Action.explain_topic, topic="binary search")
+        return super()._task_route(ctx)
+
+
+def run(out_path: Path, json_path: Path | None) -> list[dict]:
+    settings = get_settings()
+    llm = StubbornLLM() if settings.llm_model == "mock" else None
+    bot = StudyAssistant(settings, llm=llm)
+    results = []
+    md = [f"# Demo scenarios — decision traces\n",
+          f"Generated by `scripts/run_scenarios.py` with **LLM = `{bot.llm.name}`**.",
+          "Each turn shows the student message, the assistant reply, and the agent's decision trace "
+          "(which node ran, what it decided, *why*, and who decided: `llm`, `deterministic` code, "
+          "`policy-override`, `recovery`, or `tool`).\n"]
+    if bot.llm.name == "mock":
+        md.append("> ⚠️ The offline mock LLM is rule-based. These transcripts demonstrate the *workflow* (routing, "
+                  "state, guards, recovery) reproducibly; content quality and decision quality with a real model are "
+                  "evaluated separately (docs/EVALUATION.md).\n")
+    for sc in SCENARIOS:
+        sid = f"demo-{sc['id'].lower()}"
+        md += [f"\n---\n\n## {sc['id']} — {sc['title']}\n", f"**What it demonstrates:** {sc['why']}\n"]
+        turns = []
+        for step in sc["steps"]:
+            if step[0] == "fault":
+                bot.inject_faults(sid, step[1], step[2])
+                md.append(f"> 🔧 *Injected fault for next `{step[1]}` LLM attempts: `{step[2]}`*\n")
+                continue
+            if step[0] == "stubborn":
+                if isinstance(bot.llm, StubbornLLM):
+                    bot.llm.stubborn = step[1]
+                    md.append(f"> 🔧 *Router replaced by a simulated faulty LLM that always proposes the same call: {step[1]}*\n")
+                continue
+            r = bot.chat(step[1], sid)
+            turns.append({"user": step[1], "reply": r.reply, "trace": r.trace, "tool_calls": r.tool_calls,
+                          "latency_ms": r.latency_ms})
+            md.append(f"### 🧑 Student\n> {step[1]}\n")
+            reply = r.reply if len(r.reply) < 2500 else r.reply[:2500] + "\n\n*…(truncated in this log)*"
+            md.append("### 🤖 Assistant\n" + "\n".join("> " + ln for ln in reply.splitlines()) + "\n")
+            md.append("<details open><summary><b>Decision trace</b> "
+                      f"({len(r.tool_calls)} tool call(s), {r.latency_ms} ms)</summary>\n")
+            md.append("| # | Node | Decision | Source | Why | Detail |\n|---|---|---|---|---|---|")
+            for t in r.trace:
+                det = (t.get("detail") or "").replace("|", "\\|").replace("\n", " ")
+                why = (t.get("reasoning") or "").replace("|", "\\|")
+                md.append(f"| {t['step']} | `{t['node']}` | **{t['decision']}** | {t['source']} | {why} | {det} |")
+            md.append("\n</details>\n")
+        results.append({"id": sc["id"], "title": sc["title"], "turns": turns})
+    out_path.write_text("\n".join(md), encoding="utf-8")
+    if json_path:
+        json_path.write_text(json.dumps(results, indent=2, default=str), encoding="utf-8")
+    return results
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="docs/DEMO_SCENARIOS.md")
+    ap.add_argument("--json", default="docs/demo_scenarios.json")
+    a = ap.parse_args()
+    res = run(Path(a.out), Path(a.json) if a.json else None)
+    print(f"wrote {a.out}: {sum(len(s['turns']) for s in res)} turns across {len(res)} scenarios")
