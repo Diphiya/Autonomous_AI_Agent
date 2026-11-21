@@ -45,7 +45,7 @@ cp .env.example .env
 
 ```bash
 LLM_MODEL=openai:gpt-4o-mini        OPENAI_API_KEY=...
-LLM_MODEL=anthropic:claude-haiku-4-5 ANTHROPIC_API_KEY=...
+LLM_MODEL=anthropic:claude-haiku-5-5 ANTHROPIC_API_KEY=...  LLM_TEMPERATURE=   (leave empty: newer Claude models reject it)
 LLM_MODEL=ollama:llama3.1            # local, needs `pip install langchain-ollama`
 ```
 
@@ -67,7 +67,7 @@ python scripts/eval_decisions.py           # 23 labelled decision cases → docs
 python scripts/eval_decisions.py --repeats 3   # also measures run-to-run consistency
 ```
 
-Run the scenarios and the eval again with a real `LLM_MODEL` to get real-model numbers.
+Run the scenarios and the eval again with a real `LLM_MODEL` to get real-model numbers. Results with Claude Haiku are in [docs/EVALUATION.md](docs/EVALUATION.md): 100% first-action accuracy over 23 cases × 3 repeats, two real invalid outputs caught and repaired, and three bugs found and fixed.
 
 ---
 
@@ -152,6 +152,3 @@ docs/                  architecture, reasoning answers, decision log, evaluation
 5. **S5:** "Check my answers" with no quiz → policy override in the trace (30 s).
 6. Show `pytest` and the eval report (30 s).
 
-## AI tool disclosure
-
-*(Edit this so it matches exactly how you worked.)* This project was built with an AI assistant (Claude). It was used to draft the code structure, implementation, tests and documentation from the assessment brief. I reviewed and ran all code and tests, checked the scenario traces, and I can explain every design decision recorded in `docs/DECISIONS.md`.

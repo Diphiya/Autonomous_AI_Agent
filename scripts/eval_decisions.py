@@ -51,12 +51,28 @@ def run_case(bot: StudyAssistant, case: dict, sid: str) -> dict:
     executed, proposed, source = first_decision(r.trace)
     tools = [c["action"] for c in r.tool_calls if c["status"] == "ok"]
     ok_first = executed in case["expect_first"]
-    ok_tools = tools == case["expect_tools"]
+    score = None
+    for c in r.tool_calls:
+        m = re.search(r"score (\d+)%", c.get("summary") or "")
+        if c["action"] == "evaluate_answers" and m:
+            score = int(m.group(1)) / 100
+    if case.get("adaptive"):
+        # Correct = graded, then explain_topic if and only if the score was below 60%.
+        ok_tools = bool(tools) and tools[0] == "evaluate_answers" and score is not None \
+            and (("explain_topic" in tools) == (score < 0.6))
+    else:
+        ok_tools = tools == case["expect_tools"]
     ok_args = True
     for key, want in (case.get("expect_arg") or {}).items():
         k = key.rstrip("~")
         got = " ".join(str(c["args"].get(k, "")) for c in r.tool_calls)
         ok_args &= want.lower() in got.lower()
+    if case.get("expect_arg_plan_week"):
+        plan = bot.public_state(sid).get("study_plan") or {}
+        n = case["expect_arg_plan_week"]
+        want = ", ".join(plan["weeks"][n - 1]["topics"]).lower() if plan.get("weeks") and len(plan["weeks"]) >= n else None
+        got = [str(c["args"].get("topic", "")).lower() for c in r.tool_calls]
+        ok_args &= want is not None and want in got
     if case.get("expect_reply~"):
         ok_args &= case["expect_reply~"].lower() in r.reply.lower()
     return {
@@ -66,6 +82,7 @@ def run_case(bot: StudyAssistant, case: dict, sid: str) -> dict:
         "pass_first": ok_first, "pass_tools": ok_tools and ok_args,
         "raw_llm_correct": proposed in case["expect_first"] if proposed else None,
         "overrides": sum(1 for t in r.trace if t["source"] == "policy-override"),
+        "eval_score": score,
         "tool_calls": len(r.tool_calls), "latency_s": round(latency, 3),
         "action_sequence": [t["decision"] for t in r.trace if t["node"] in ("router", "ingest")],
     }
@@ -88,23 +105,28 @@ def main():
     rows = runs[0]
 
     n = len(rows)
+    # recall: of the cases where ONLY a question is right, how many got one;
+    # precision: of the questions asked, how many were acceptable (a question is listed as correct for that case).
     clar_expected = {r["id"] for r in rows if r["expected_first"] == ["ask_clarification"]}
     clar_made = {r["id"] for r in rows if r["executed_first"] == "ask_clarification"}
+    clar_ok = {r["id"] for r in rows if r["executed_first"] == "ask_clarification" and "ask_clarification" in r["expected_first"]}
     raw = [r["raw_llm_correct"] for r in rows if r["raw_llm_correct"] is not None]
     by_cat = defaultdict(list)
     for r in rows:
         by_cat[r["category"]].append(r)
     consistency = None
     if a.repeats > 1:
-        same = sum(1 for i in range(n) if len({tuple(run[i]["action_sequence"]) for run in runs}) == 1)
-        consistency = same / n
+        for i in range(n):
+            rows[i]["consistent"] = len({tuple(run[i]["action_sequence"]) for run in runs}) == 1
+            rows[i]["sequences_seen"] = sorted({" > ".join(run[i]["action_sequence"]) for run in runs})
+        consistency = sum(r["consistent"] for r in rows) / n
 
     m = {
         "model": model, "cases": n, "repeats": a.repeats,
         "system_first_action_accuracy": sum(r["pass_first"] for r in rows) / n,
         "raw_llm_first_action_accuracy": (sum(raw) / len(raw)) if raw else None,
         "tool_sequence_exact_match": sum(r["pass_tools"] for r in rows) / n,
-        "clarification_precision": (len(clar_expected & clar_made) / len(clar_made)) if clar_made else None,
+        "clarification_precision": (len(clar_ok) / len(clar_made)) if clar_made else None,
         "clarification_recall": (len(clar_expected & clar_made) / len(clar_expected)) if clar_expected else None,
         "policy_override_rate_per_turn": sum(r["overrides"] for r in rows) / n,
         "avg_tool_calls_per_turn": sum(r["tool_calls"] for r in rows) / n,
@@ -129,6 +151,10 @@ def main():
         ok = "✅" if r["pass_first"] and r["pass_tools"] else ("🟡" if r["pass_first"] else "❌")
         lines.append(f"| {r['id']} | {r['message'][:60]} | {'/'.join(r['expected_first'])} | {r['llm_proposed_first']} | "
                      f"{r['executed_first']} ({r['first_source']}) | {', '.join(r['tools']) or '—'} | {ok} |")
+    flaky = [r for r in rows if r.get("consistent") is False]
+    if flaky:
+        lines += ["\n## Inconsistent across repeats\n", "| ID | Message | Sequences seen |", "|---|---|---|"]
+        lines += [f"| {r['id']} | {r['message'][:60]} | {' / '.join(r['sequences_seen'])} |" for r in flaky]
     if model == "mock":
         lines.append("\n> The mock LLM is rule-based and was written alongside these cases, so its scores validate the "
                      "harness and the deterministic layers — they are **not** evidence of LLM decision quality. Run "
