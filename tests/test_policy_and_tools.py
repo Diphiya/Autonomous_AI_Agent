@@ -126,3 +126,15 @@ def test_regrading_in_same_turn_is_a_duplicate_not_no_quiz():
     calls = [{"action": "evaluate_answers", "args": {}, "status": "ok"}]
     r = run(dec(Action.evaluate_answers, student_answers=["A"]), {"tool_calls": calls, "active_quiz": None})
     assert r.action == Action.respond and "already graded" in r.override_reason and r.message is None
+
+
+def test_quiz_question_with_code_keeps_indentation_and_bold_line():
+    """Real-model finding: a question containing Python code rendered with stray ** and lost indentation."""
+    from study_agent.agent.render import render_quiz
+    q = {"topic": "recursion", "level": "beginner", "questions": [
+        {"id": 2, "type": "mcq", "question": "What does factorial(4) return?\ndef factorial(n):\n    if n == 0:\n        return 1\n    return n * factorial(n - 1)",
+         "options": ["4", "10", "24", "16"], "correct_option": "C", "reference_answer": "24", "concept": "tracing"}]}
+    out = render_quiz(q)
+    assert "**2. What does factorial(4) return?**" in out
+    assert "```\ndef factorial(n):\n    if n == 0:\n        return 1" in out
+    assert "return n * factorial(n - 1)**" not in out

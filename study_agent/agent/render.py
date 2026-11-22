@@ -38,7 +38,11 @@ def render_explanation(e: dict[str, Any]) -> str:
 def render_quiz(q: dict[str, Any]) -> str:
     lines = [f"### 📝 Quiz — {q['topic']} ({q['level']})", ""]
     for item in q["questions"]:
-        lines.append(f"**{item['id']}. {item['question']}**" + ("  *(short answer)*" if item["type"] == "short" else ""))
+        head, _, rest = item["question"].strip().partition("\n")
+        lines.append(f"**{item['id']}. {head.strip()}**" + ("  *(short answer)*" if item["type"] == "short" else ""))
+        rest = rest.strip("\n")
+        if rest.strip():  # multi-line question, usually code: keep line breaks and indentation
+            lines += [rest] if "```" in rest else ["```", rest, "```"]
         if item["type"] == "mcq":
             for i, opt in enumerate(item["options"]):
                 lines.append(f"   {LETTERS[i]}) {opt}")
