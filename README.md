@@ -16,7 +16,7 @@ Package	Purpose
 `fastapi`, `uvicorn`	REST API and web server
 `python-dotenv`	Loads settings from `.env`
 `pytest`, `httpx`	Automated tests
----
+
 Setup instructions
 1. Get the code
 ```bash
