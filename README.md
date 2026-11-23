@@ -3,7 +3,7 @@ Project overview
 An AI study assistant that understands a student's goals and decides for itself what to do next: build a personalised study plan, explain a topic at the right level, generate a quiz, grade the answers, or ask a clarifying question when a request is ambiguous.
 It keeps context across turns, adapts its workflow to intermediate results (for example, a low quiz score triggers a focused re-explanation), and recovers from failed tool calls and invalid LLM output.
 How it works: an LLM router proposes the next action as a structured decision. A deterministic policy layer then checks that proposal (execution limits, loop prevention, preconditions) before anything runs. Each step is recorded in a decision trace, so every action can be explained. The workflow is built with LangGraph and served through a FastAPI backend with a small web UI.
----
+
 Dependencies
 Python 3.10 or newer (3.11 or 3.12 recommended)
 An LLM API key for real use, e.g. Anthropic (Claude) or OpenAI. Optional: an offline mock LLM runs the whole system without a key.
